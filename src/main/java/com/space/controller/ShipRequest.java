@@ -1,36 +1,8 @@
-package com.space.model;
+package com.space.controller;
 
 import com.space.model.ShipType;
 
-import javax.persistence.*;
-import java.util.Date;
-
-@Entity
-public class Ship {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-    private String name;
-    private String planet;
-
-    @Enumerated(EnumType.STRING)
-    private ShipType shipType;
-
-    @Temporal(TemporalType.DATE)
-    private Date prodDate;
-    private Boolean isUsed;
-    private Double speed;
-    private Integer crewSize;
-    private Double rating;
-
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
+public class ShipRequest {
     public String getName() {
         return name;
     }
@@ -55,11 +27,11 @@ public class Ship {
         this.shipType = shipType;
     }
 
-    public Date getProdDate() {
+    public Long getProdDate() {
         return prodDate;
     }
 
-    public void setProdDate(Date prodDate) {
+    public void setProdDate(Long prodDate) {
         this.prodDate = prodDate;
     }
 
@@ -87,12 +59,11 @@ public class Ship {
         this.crewSize = crewSize;
     }
 
-    public Double getRating() {
-        return rating;
-    }
-
-    public void setRating(Double rating) {
-        this.rating = rating;
-    }
-
+    private String name;
+    private String planet;
+    private ShipType shipType;
+    private Long prodDate;
+    private Boolean isUsed;
+    private Double speed;
+    private Integer crewSize;
 }
