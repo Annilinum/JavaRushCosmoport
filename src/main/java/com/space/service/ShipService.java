@@ -6,6 +6,9 @@ import com.space.exceptions.NotFoundException;
 import com.space.model.Ship;
 import com.space.model.ShipType;
 import com.space.repository.ShipRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.Calendar;
@@ -30,129 +33,18 @@ public class ShipService {
                                    Double minRating, Double maxRating,
                                    ShipOrder order,
                                    Integer pageNumber, Integer pageSize) {
-        List<Ship> allShips = getShipsList(name, planet, shipType, after, before, isUsed, minSpeed, maxSpeed, minCrewSize, maxCrewSize, minRating, maxRating);
+        if (pageNumber ==null) pageNumber = 0;
+        if (pageSize == null) pageSize = 3;
 
-        if (order == ShipOrder.SPEED) {
-            allShips.sort(Comparator.comparing(Ship::getSpeed));
-        } else if (order == ShipOrder.DATE) {
-            allShips.sort(Comparator.comparing(Ship::getProdDate));
-        } else if (order == ShipOrder.RATING) {
-            allShips.sort(Comparator.comparing(Ship::getRating));
-        } else {
-            allShips.sort(Comparator.comparing(Ship::getId));
+        String myOrder = ShipOrder.ID.getFieldName();
+        if (order != null){
+            myOrder = order.getFieldName();
         }
+        PageRequest pageRequest = PageRequest.of(pageNumber, pageSize, Sort.by(myOrder));
 
-        return getPage(allShips, pageNumber, pageSize);
-
+        return repository.findParameters(name, planet, shipType, after, before, isUsed, minSpeed, maxSpeed, minCrewSize, maxCrewSize, minRating,maxRating, pageRequest).getContent();
     }
 
-    public List<Ship> getShipsList(String name, String planet,
-                                   ShipType shipType, Long after, Long before,
-                                   Boolean isUsed,
-                                   Double minSpeed, Double maxSpeed,
-                                   Integer minCrewSize, Integer maxCrewSize,
-                                   Double minRating, Double maxRating) {
-
-        List<Ship> all = repository.findAll();
-        if (name != null) {
-            all = all.stream().filter(ship -> hasName(ship, name)).collect(Collectors.toList());
-        }
-        if (planet != null) {
-            all = all.stream().filter(ship -> hasPlanet(ship, planet)).collect(Collectors.toList());
-        }
-        if (shipType != null) {
-            all = all.stream().filter(ship -> hasShipType(ship, shipType)).collect(Collectors.toList());
-        }
-        if (after != null) {
-            all = all.stream().filter(ship -> isDateAfter(ship, after)).collect(Collectors.toList());
-        }
-        if (before != null) {
-            all = all.stream().filter(ship -> isDateBefore(ship, before)).collect(Collectors.toList());
-        }
-        if (isUsed != null) {
-            all = all.stream().filter(ship -> isUsedShip(ship, isUsed)).collect(Collectors.toList());
-        }
-        if (minSpeed != null) {
-            all = all.stream().filter(ship -> isSpeedGreaterThan(ship, minSpeed)).collect(Collectors.toList());
-        }
-        if (maxSpeed != null) {
-            all = all.stream().filter(ship -> isSpeedLessThan(ship, maxSpeed)).collect(Collectors.toList());
-        }
-        if (minCrewSize != null) {
-            all = all.stream().filter(ship -> isMaximumCrew(ship, minCrewSize)).collect(Collectors.toList());
-        }
-        if (maxCrewSize != null) {
-            all = all.stream().filter(ship -> isMinimumCrew(ship, maxCrewSize)).collect(Collectors.toList());
-        }
-        if (minRating != null) {
-            all = all.stream().filter(ship -> isRatingGreaterThan(ship, minRating)).collect(Collectors.toList());
-        }
-        if (maxRating != null) {
-            all = all.stream().filter(ship -> isRatingLessThan(ship, maxRating)).collect(Collectors.toList());
-        }
-
-        return all;
-    }
-
-    private boolean isRatingLessThan(Ship ship, Double maxRating) {
-        return ship.getRating() <= maxRating;
-    }
-
-    private boolean isRatingGreaterThan(Ship ship, Double minRating) {
-        return ship.getRating() >= minRating;
-    }
-
-    private boolean isMinimumCrew(Ship ship, Integer maxCrewSize) {
-        return ship.getCrewSize() <= maxCrewSize;
-    }
-
-    private boolean isMaximumCrew(Ship ship, Integer minCrewSize) {
-        return ship.getCrewSize() >= minCrewSize;
-    }
-
-    private boolean isSpeedLessThan(Ship ship, Double maxSpeed) {
-        return ship.getSpeed() <= maxSpeed;
-    }
-
-    private boolean isSpeedGreaterThan(Ship ship, Double minSpeed) {
-        return ship.getSpeed() >= minSpeed;
-    }
-
-    private boolean isUsedShip(Ship ship, Boolean isUsed) {
-        return ship.getUsed() == isUsed;
-    }
-
-    private boolean isDateBefore(Ship ship, Long before) {
-        return ship.getProdDate().getTime() < before;
-    }
-
-    private boolean isDateAfter(Ship ship, Long after) {
-        return ship.getProdDate().getTime() > after;
-    }
-
-    private boolean hasShipType(Ship ship, ShipType shipType) {
-        return ship.getShipType() == shipType;
-    }
-
-    private boolean hasPlanet(Ship ship, String planet) {
-        return ship.getPlanet().toLowerCase().contains(planet.toLowerCase());
-    }
-
-    private boolean hasName(Ship ship, String name) {
-        return ship.getName().toLowerCase().contains(name.toLowerCase());
-    }
-
-    private List<Ship> getPage(List<Ship> all, Integer pageNumber, Integer pageSize) {
-        pageNumber = pageNumber == null ? 0 : pageNumber;
-        pageSize = pageSize == null ? 3 : pageSize;
-
-        int start = pageNumber * pageSize <= all.size() ? pageSize * pageNumber : all.size() - pageSize;
-        int end = Math.min((pageSize * pageNumber + pageSize), all.size());
-        start = Math.min(start, end);
-        all = all.subList(start, end);
-
-        return all;
-    }
 
     public Integer getShipsCount(String name, String planet,
                                  ShipType shipType, Long after, Long before,
@@ -160,8 +52,7 @@ public class ShipService {
                                  Double minSpeed, Double maxSpeed,
                                  Integer minCrewSize, Integer maxCrewSize,
                                  Double minRating, Double maxRating) {
-        List<Ship> shipsList = getShipsList(name, planet, shipType, after, before, isUsed, minSpeed, maxSpeed, minCrewSize, maxCrewSize, minRating, maxRating);
-        return shipsList.size();
+        return 0;
     }
 
     public void deleteShip(Long id) {
